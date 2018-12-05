@@ -1,4 +1,9 @@
-#1 @ 7,589: 24x11
+/* Test data */
+const testData = `#1 @ 1,3: 4x4
+#2 @ 3,1: 4x4
+#3 @ 5,5: 2x2`;
+
+const initialData = `#1 @ 7,589: 24x11
 #2 @ 846,110: 28x22
 #3 @ 940,313: 27x11
 #4 @ 457,400: 27x27
@@ -1370,4 +1375,89 @@
 #1370 @ 670,280: 18x18
 #1371 @ 527,462: 15x14
 #1372 @ 951,190: 25x12
-#1373 @ 130,274: 15x26
+#1373 @ 130,274: 15x26`;
+
+console.time("Data processing");
+
+/**
+ * Parse our data
+ */
+const isTest = false;
+const parsedData = (isTest ? testData : initialData).split("\n").map(value => {
+  let result = ["", "", "", ""];
+  while (value.substr(0, 1) !== "@") {
+    value = value.substr(1);
+  }
+  value = value.substr(2);
+  while (value.substr(0, 1) !== ",") {
+    result[0] += value.substr(0, 1);
+    value = value.substr(1);
+  }
+  value = value.substr(1);
+  while (value.substr(0, 1) !== ":") {
+    result[1] += value.substr(0, 1);
+    value = value.substr(1);
+  }
+  value = value.substr(2);
+  while (value.substr(0, 1) !== "x") {
+    result[2] += value.substr(0, 1);
+    value = value.substr(1);
+  }
+  value = value.substr(1);
+  result[3] = value;
+  return result.map(value => parseInt(value, 10));
+});
+
+const length = parsedData.length;
+const matrixWidth = isTest ? 8 : 1000;
+const matrixHeight = isTest ? 8 : 1000;
+const matrix = new Uint8Array(matrixWidth * matrixHeight);
+
+for (let index = length - 1; index > -1; index--) {
+  const dataElement = parsedData[index];
+  const elementX = dataElement[0];
+  const elementY = dataElement[1];
+  const elementWidth = dataElement[2];
+  const elementHeight = dataElement[3];
+  let point = matrixWidth * elementY + elementX;
+
+  for (let indexWidth = elementWidth; indexWidth > 0; indexWidth--) {
+    for (let indexHeight = elementHeight; indexHeight > 0; indexHeight--) {
+      matrix[point + matrixWidth * indexHeight + indexWidth]++;
+    }
+  }
+}
+
+for (let index = length - 1; index > -1; index--) {
+  const dataElement = parsedData[index];
+  const elementX = dataElement[0];
+  const elementY = dataElement[1];
+  const elementWidth = dataElement[2];
+  const elementHeight = dataElement[3];
+  let point = matrixWidth * elementY + elementX;
+
+  let isFabric = false;
+  for (let indexWidth = elementWidth; indexWidth > 0; indexWidth--) {
+    for (let indexHeight = elementHeight; indexHeight > 0; indexHeight--) {
+      if (matrix[point + matrixWidth * indexHeight + indexWidth] > 1) {
+        isFabric = true;
+      }
+    }
+  }
+  if (!isFabric) {
+    console.log("Untouched Fabric ID: ", index + 1);
+  }
+}
+
+let overlapCount = 0;
+for (
+  let matrixIndex = matrixWidth * matrixHeight;
+  matrixIndex > 0;
+  matrixIndex--
+) {
+  if (matrix[matrixIndex] > 1) overlapCount++;
+}
+
+console.log(overlapCount);
+
+console.timeEnd("Data processing");
