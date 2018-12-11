@@ -44,12 +44,11 @@ int main()
     insertSorted(&sortedList, newGuard);
   }
 
-  //toString(sortedList);
+  toString(sortedList);
 
   GuardData *guardInfo = NULL;
   GuardData *tempNextNode = NULL;
   ListIterator guardItr = createIterator(sortedList);
-  int tempMinsSlept = 0;
   int tempGuardID = 0;
 
   while ((guardInfo = nextElement(&guardItr)) != NULL)
@@ -138,7 +137,7 @@ int main()
     }
   }
 
-  printf("Most Mins Slept ID: %d  |  Total Mins Slept: %d\n", mostMinsSleptID, totalMinsSlept);
+  printf("Most Mins Slept ID: %d\n", mostMinsSleptID);
 
   ListIterator finalItr2 = createIterator(sleepInfoList);
   SleepData *sleepObject2 = NULL;
@@ -153,7 +152,7 @@ int main()
         if (sleepObject2->minuteSleptArray[i] > highestSleptMinute)
         {
           highestSleptMinuteIndex = i;
-          //highestSleptMinute = sleepObject2->minuteSleptArray[i];
+          highestSleptMinute = sleepObject2->minuteSleptArray[i];
         }
       }
     }
@@ -228,11 +227,15 @@ char *printSleepData(void *sleepData)
 {
   SleepData *printSleep = (SleepData *)sleepData;
   printf("Identifier: %d  |  Mins Slept: %d\n", printSleep->identifier, printSleep->minutesSlept);
-  for (int i = 0; i < 60; i++)
+
+  if (printSleep->identifier == 2441)
   {
-    printf("Minute: %d | Times Slept: %d\n", i, printSleep->minuteSleptArray[i]);
+    for (int i = 0; i < 60; i++)
+    {
+      printf("Minute: %d | Times Slept: %d\n", i, printSleep->minuteSleptArray[i]);
+    }
+    printf("\n\n");
   }
-  printf("\n\n");
 
   return NULL;
 }
