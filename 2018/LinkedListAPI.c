@@ -266,6 +266,7 @@ char *toString(List list)
 	while ((elem = nextElement(&iter)) != NULL)
 	{
 		list.printData(elem);
+
 		// char* currDescr = list.printData(elem);
 		// int newLen = strlen(str)+50+strlen(currDescr);
 		// str = realloc(str, newLen);
@@ -299,6 +300,16 @@ void *nextElement(ListIterator *iter)
 	{
 		return NULL;
 	}
+}
+
+void *getNextNodeData(ListIterator *iter)
+{
+	Node *tempNode = iter->current;
+	if (tempNode == NULL)
+	{
+		return NULL;
+	}
+	return tempNode->data;
 }
 
 // Function that searches for an element in the list using a comparator function.

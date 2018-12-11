@@ -4,23 +4,8 @@
 #include <stdbool.h>
 #include "LinkedListAPI.c"
 
-typedef struct
-{
-  int month;
-  int day;
-  int hour;
-  int minute;
-  char identifier[50];
-} GuardData;
-
-typedef struct
-{
-  int identifier;
-  int minutesSlept;
-  int minuteSleptArray[60];
-} SleepData;
-
 char *printGuardData(void *guardData);
+char *printSleepData(void *sleepData);
 int compareDate(const void *dataOne, const void *dataTwo);
 
 int main()
@@ -32,11 +17,11 @@ int main()
   char **inputArray = NULL;
 
   List sortedList = initializeList(&printGuardData, NULL, &compareDate);
-  List sleepInfoList = initializeList(NULL, NULL, NULL);
+  List sleepInfoList = initializeList(&printSleepData, NULL, NULL);
 
   // File Reading
-  //fileStream = fopen("./inputs/Dec4-2018.txt", "r");
-  fileStream = fopen("./inputs/DecTEST.txt", "r");
+  fileStream = fopen("./inputs/Dec4-2018.txt", "r");
+  //fileStream = fopen("./inputs/DecTEST.txt", "r");
   while (fgets(inputString, 100, fileStream) != NULL)
   {
     lineCount++;
@@ -59,17 +44,16 @@ int main()
     insertSorted(&sortedList, newGuard);
   }
 
-  toString(sortedList);
+  //toString(sortedList);
 
   GuardData *guardInfo = NULL;
-  GuardData *nextGuardInfo = NULL;
+  GuardData *tempNextNode = NULL;
   ListIterator guardItr = createIterator(sortedList);
   int tempMinsSlept = 0;
   int tempGuardID = 0;
 
   while ((guardInfo = nextElement(&guardItr)) != NULL)
   {
-
     if (guardInfo->identifier[0] == '#') // if guard identifier
     {
       sscanf(guardInfo->identifier, "#%d", &tempGuardID);
@@ -82,36 +66,101 @@ int main()
     {
       if (sleepGuard->identifier == tempGuardID) // if guardID is already in list
       {
-        // do stuff
+        GuardData *firstAction = NULL;
+        GuardData *secondAction = NULL;
+        do
+        {
+          firstAction = nextElement(&guardItr);
+          secondAction = nextElement(&guardItr);
+
+          // Calculate minutes slept
+          int minsAsleep = secondAction->minute - firstAction->minute;
+          sleepGuard->minutesSlept += minsAsleep;
+
+          // Add counters for each minute slept
+          for (int j = secondAction->minute - 1; j >= firstAction->minute; j--)
+          {
+            sleepGuard->minuteSleptArray[j]++;
+          }
+
+          tempNextNode = getNextNodeData(&guardItr);
+        } while (tempNextNode != NULL && tempNextNode->identifier[0] != '#');
 
         foundInList = true;
         break;
       }
     }
 
-    if (!foundInList)
+    if (!foundInList) // if went through whole list and didnt find anything
     {
       sleepGuard = malloc(sizeof(SleepData));
       sleepGuard->identifier = tempGuardID;
-      GuardData *firstAction;
-      GuardData *secondAction;
-      while ((firstAction = nextElement(&guardItr)) != NULL || (firstAction = nextElement(&guardItr))->identifier[0] != '#')
-      {
-        secondAction = nextElement(&guardItr);
-        printf("%s %s\n", firstAction->identifier, secondAction->identifier);
+      for (int i = 0; i < 60; i++)
+      { // initialize array to 0;
+        sleepGuard->minuteSleptArray[i] = 0;
       }
+      GuardData *firstAction = NULL;
+      GuardData *secondAction = NULL;
+      do
+      {
+        firstAction = nextElement(&guardItr);
+        secondAction = nextElement(&guardItr);
 
-      //insertBack(&sleepInfoList, sleepGuard);
+        // Calculate minutes slept
+        int minsAsleep = secondAction->minute - firstAction->minute;
+        sleepGuard->minutesSlept += minsAsleep;
+
+        // Add counters for each minute slept
+        for (int j = secondAction->minute - 1; j >= firstAction->minute; j--)
+        {
+          sleepGuard->minuteSleptArray[j]++;
+        }
+
+        tempNextNode = getNextNodeData(&guardItr);
+      } while (tempNextNode != NULL && tempNextNode->identifier[0] != '#');
+
+      insertBack(&sleepInfoList, sleepGuard);
     }
-
-    // else
-    // {
-    //   nextGuardInfo = nextElement(&guardItr);
-    //   tempMinsSlept = guardInfo->
-    // }
   }
 
-  //toString(sortedList);
+  //toString(sleepInfoList);
+
+  ListIterator finalItr = createIterator(sleepInfoList);
+  SleepData *sleepObject = NULL;
+  int mostMinsSleptID = 0;
+  int totalMinsSlept = 0;
+  while ((sleepObject = nextElement(&finalItr)) != NULL)
+  {
+    if (sleepObject->minutesSlept > totalMinsSlept)
+    {
+      mostMinsSleptID = sleepObject->identifier;
+      totalMinsSlept = sleepObject->minutesSlept;
+    }
+  }
+
+  printf("Most Mins Slept ID: %d  |  Total Mins Slept: %d\n", mostMinsSleptID, totalMinsSlept);
+
+  ListIterator finalItr2 = createIterator(sleepInfoList);
+  SleepData *sleepObject2 = NULL;
+  int highestSleptMinute = 0;
+  int highestSleptMinuteIndex = 0;
+  while ((sleepObject2 = nextElement(&finalItr2)) != NULL)
+  {
+    if (sleepObject2->identifier == mostMinsSleptID)
+    {
+      for (int i = 0; i < 60; i++)
+      {
+        if (sleepObject2->minuteSleptArray[i] > highestSleptMinute)
+        {
+          highestSleptMinuteIndex = i;
+          //highestSleptMinute = sleepObject2->minuteSleptArray[i];
+        }
+      }
+    }
+  }
+
+  printf("Minute Most Slept: %d\n", highestSleptMinuteIndex);
+
   return 0;
 }
 
@@ -140,11 +189,11 @@ int compareDate(const void *dataOne, const void *dataTwo)
     }
     else if (guardOne->day == guardTwo->day)
     {
-      if (guardOne->hour < guardTwo->hour)
-      { // 23 < 00 - 11:00 vs 12:00
+      if (guardOne->hour > guardTwo->hour)
+      { // 23 > 00 - 11:00 vs 12:00
         return -1;
       }
-      else if (guardOne->hour > guardTwo->hour)
+      else if (guardOne->hour < guardTwo->hour)
       {
         return 1;
       }
@@ -172,6 +221,18 @@ char *printGuardData(void *guardData)
 {
   GuardData *printGuard = (GuardData *)guardData;
   printf("Month:%d | Day:%d | Hour:%d | Min:%d | Identifier: %s\n", printGuard->month, printGuard->day, printGuard->hour, printGuard->minute, printGuard->identifier);
+  return NULL;
+}
+
+char *printSleepData(void *sleepData)
+{
+  SleepData *printSleep = (SleepData *)sleepData;
+  printf("Identifier: %d  |  Mins Slept: %d\n", printSleep->identifier, printSleep->minutesSlept);
+  for (int i = 0; i < 60; i++)
+  {
+    printf("Minute: %d | Times Slept: %d\n", i, printSleep->minuteSleptArray[i]);
+  }
+  printf("\n\n");
 
   return NULL;
 }
