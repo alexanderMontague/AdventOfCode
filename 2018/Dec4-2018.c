@@ -44,8 +44,6 @@ int main()
     insertSorted(&sortedList, newGuard);
   }
 
-  toString(sortedList);
-
   GuardData *guardInfo = NULL;
   GuardData *tempNextNode = NULL;
   ListIterator guardItr = createIterator(sortedList);
@@ -77,7 +75,7 @@ int main()
           sleepGuard->minutesSlept += minsAsleep;
 
           // Add counters for each minute slept
-          for (int j = secondAction->minute - 1; j >= firstAction->minute; j--)
+          for (int j = firstAction->minute; j < secondAction->minute; j++)
           {
             sleepGuard->minuteSleptArray[j]++;
           }
@@ -122,7 +120,8 @@ int main()
     }
   }
 
-  //toString(sleepInfoList);
+  toString(sleepInfoList);
+  //toString(sortedList);
 
   ListIterator finalItr = createIterator(sleepInfoList);
   SleepData *sleepObject = NULL;
